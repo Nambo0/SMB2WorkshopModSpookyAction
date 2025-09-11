@@ -161,6 +161,12 @@
 // 4:3. Additionally fixes View Stage stretching and Sand's haze breaking in
 // widescreen. Sprites will be fixed in the future.
 
+// fix-spooky-action
+//
+// Fixes an issue where accumulated floating-point error during collision
+// calculations may apply a small undesired positiion/velocity to the ball. This is
+// most noticeable on stages with many, fast, or very rotational animations.
+
 // ----------------------------------------------------------------------------
 
 // 'enabled' - Applies the patch
@@ -197,6 +203,7 @@
 	four-digit-banana-counter: disabled
 	fix-minimap-color: disabled
 	fix-widescreen: disabled
+	fix-spooky-action: disabled
 }
 
 // Toggles which party games are accessible from the party game menu.

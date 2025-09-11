@@ -4525,7 +4525,7 @@
 802C15A0:stcoli_sub11
 802C16DC:g_cone_coli_something
 802C16DC:stcoli_sub12
-802C19AC:g_something_with_physicsball_restitution
+802C19AC:collide_ball_with_plane
 802C19AC:stcoli_sub13
 802C1CEC:line_intersects_rect
 802C1CEC:stcoli_sub14
@@ -4555,7 +4555,7 @@
 802C4968:stcoli_sub30
 802C49C0:inv_tf_physicsball_by_mtxa
 802C49C0:stcoli_sub31
-802C4A18:tf_physball_to_itemgroup_space
+802C4A18:tf_physicsball_to_itemgroup_space
 802C4A18:stcoli_sub32
 802C4C38:FUN_801eea00
 802C4C58:g_something_w_ig_and_coli_headers

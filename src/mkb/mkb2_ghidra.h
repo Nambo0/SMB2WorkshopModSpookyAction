@@ -142,6 +142,14 @@ typedef undefined2 StobjType;
 
 typedef struct Vec Vec, *PVec;
 
+enum {
+    COLI_FLAG_OCCURRED=1,
+    COLI_FLAG_UNK1=2
+};
+typedef undefined4 ColiFlag;
+
+typedef struct ColiPlane ColiPlane, *PColiPlane;
+
 typedef struct GmaModel GmaModel, *PGmaModel;
 
 typedef struct S16Vec S16Vec, *PS16Vec;
@@ -192,6 +200,21 @@ enum {
 };
 typedef undefined4 GXTexFmt;
 
+struct Vec {
+    float x;
+    float y;
+    float z;
+} __attribute__((__packed__));
+static_assert(sizeof(Vec) == 0xc);
+
+struct ColiPlane {
+    struct Vec point;
+    struct Vec normal;
+    u16 g_flags1;
+    u16 g_flags2;
+} __attribute__((__packed__));
+static_assert(sizeof(ColiPlane) == 0x1c);
+
 struct S16Vec { /* Often used for rotations */
     s16 x;
     s16 y;
@@ -231,27 +254,18 @@ struct GXTexObj {
 } __attribute__((__packed__));
 static_assert(sizeof(GXTexObj) == 0x20);
 
-struct Vec {
-    float x;
-    float y;
-    float z;
-} __attribute__((__packed__));
-static_assert(sizeof(Vec) == 0xc);
-
 struct PhysicsBall { /* A representation of a Ball with just the physics/collision-related info */
-    dword flags;
+    ColiFlag  flags;
     struct Vec pos;
     struct Vec prev_pos;
     struct Vec vel;
     float radius;
     float acceleration;
     float restitution;
-    dword g_jerk;
-    undefined field_0x38[0xc];
-    struct Vec g_some_vec;
-    undefined field_0x50[0x4];
-    dword field25_0x54;
-    float field26_0x58;
+    dword hardest_coli_speed;
+    struct ColiPlane hardest_coli_plane;
+    dword hardest_coli_ig_idx;
+    float friction;
     dword itemgroup_idx; /* The itemgroup that this PhysicsBall is relative to, aka in the local space of */
 } __attribute__((__packed__));
 static_assert(sizeof(PhysicsBall) == 0x60);
@@ -2185,7 +2199,7 @@ struct Ball {
     int field48_0x108;
     struct Vec ape_facedir_point; /* The point of interest that the monkey looks at (goal, banana, etc) */
     float something_with_ape_facedir; /* Approaches 1 the closer you are to the point of interest */
-    struct Vec g_last_collision_normal; /* Maybe inverse of the normal of the last triangle collided with? */
+    struct Vec g_last_coli_normal; /* Maybe inverse of the normal of the last triangle collided with? */
     undefined field_0x128[0x4];
     dword g_race_flags;
     short g_other_counter;
@@ -2293,7 +2307,7 @@ typedef struct Itemgroup Itemgroup, *PItemgroup;
 
 struct Itemgroup { /* Contains the current animation-related state of each item group in a stage (each thing corresponding to a collision header in the stagedef) */
     dword playback_state; /* Corresponding to the switch playback type which is controlling the item group, see PlaybackState */
-    dword anim_frame;
+    s32 anim_frame;
     struct Vec position;
     struct Vec prev_position;
     struct S16Vec rotation;
@@ -8774,7 +8788,7 @@ extern "C" {
     void set_ball_properties(struct Ball * ball, int constants_idx);
     void ball_collision_stars(struct Ball * ball);
     void init_physicsball_from_ball(struct Ball * ball, struct PhysicsBall * physicsball);
-    void g_copy_physicsball_to_ball(struct Ball * ball, struct PhysicsBall * physicsball);
+    void apply_physicsball_to_ball(struct Ball * ball, struct PhysicsBall * physicsball);
     void g_ball_ape_rotation(struct Ball * ball);
     void spawn_postgoal_ball_sparkle(void);
     void g_some_ballfunc(struct Ball * param_1);
@@ -8796,6 +8810,7 @@ extern "C" {
     void g_sphere_coli_something(struct PhysicsBall * param_1, struct StagedefColiSphere * param_2);
     void g_cone_coli_something(struct PhysicsBall * param_1, struct StagedefColiCone * param_2);
     void g_something_with_physicsball_restitution(struct PhysicsBall * physicsball, struct Vec * param_2);
+    void collide_ball_with_plane(struct PhysicsBall * physicsball, struct ColiPlane * plane);
     BOOL32 line_intersects_rect(struct Vec * lineStart, struct Vec * lineEnd, struct Rect * rect);
     void stobj_jamabar_child_coli(struct PhysicsBall * physicsball, struct Stobj * stobj);
     void raycast_stage_down(struct Vec * origin, struct RaycastHit * out_hit, struct Vec * out_vel_at_point);
@@ -8813,9 +8828,9 @@ extern "C" {
     void stcoli_sub29(float * param_1, float * param_2, float * param_3, float * param_4, undefined4 param_5, undefined4 param_6, undefined4 param_7, undefined4 param_8);
     void tf_physicsball_by_mtxa(struct PhysicsBall * physicsball1, struct PhysicsBall * physicsball2);
     void inv_tf_physicsball_by_mtxa(struct PhysicsBall * src_physicsball, struct PhysicsBall * dest_physicsball);
-    void tf_physball_to_itemgroup_space(struct PhysicsBall * physicsball, int itemgroup_idx);
-    uint g_something_w_ig_and_coli_headers(struct Itemgroup * ig_list, struct StagedefColiHeader * coli_header_list, undefined4 param_3, struct Vec * physicsball_x);
-    undefined4 g_something_w_ig_and_coli_headers_2(struct Itemgroup * ig_list, struct StagedefColiHeader * coli_header_list, struct Vec * physicsball_pos);
+    void tf_physicsball_to_itemgroup_space(struct PhysicsBall * physicsball, int dest_ig_idx);
+    uint g_is_ball_in_ig_coli_range(struct Itemgroup * ig_list, struct StagedefColiHeader * coli_header_list, undefined4 param_3, struct Vec * physicsball_x);
+    BOOL32 g_ball_ig_bound_sphere_overlap(struct Itemgroup * ig_anim, struct StagedefColiHeader * ig_def, struct Vec * physicsball_pos);
     void event_world_init(void);
     void event_world_tick(void);
     void event_world_dest(void);
@@ -8823,7 +8838,7 @@ extern "C" {
     void event_stage_init(void);
     void event_stage_tick(void);
     void event_stage_dest(void);
-    double g_advance_itemgroup_anim_frame(struct Itemgroup * itemgroup, struct StagedefColiHeader * colis_header);
+    float advance_itemgroup_anim(struct Itemgroup * itemgroup, struct StagedefColiHeader * colis_header);
     void g_advance_stage_animation(void);
     void g_transform_some_itemgroup_vec(void);
     GmaModel * get_GmaBuffer_entry(struct GmaBuffer * buffer, char * name);
