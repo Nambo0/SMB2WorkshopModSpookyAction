@@ -13,6 +13,10 @@ constexpr u32 COLI_FLAG_IG = 1 << 7;
 patch::Tramp<decltype(&mkb::init_physicsball_from_ball)> s_init_physicsball_tramp;
 patch::Tramp<decltype(&mkb::tf_physicsball_to_itemgroup_space)> s_tf_physicsball_tramp;
 patch::Tramp<decltype(&mkb::collide_ball_with_plane)> s_collide_physicsball_tramp;
+// void stobj_bumper_coli(struct Stobj * stobj, struct PhysicsBall * physicsball);
+patch::Tramp<decltype(&mkb::stobj_bumper_coli)> s_stobj_bumper_coli_tramp;
+// void stobj_goalbag_coli(struct Stobj * stobj, struct PhysicsBall * physicsball);
+patch::Tramp<decltype(&mkb::stobj_goalbag_coli)> s_stobj_goalbag_coli_tramp;
 
 mkb::PhysicsBall s_clean_physicsball;
 
@@ -42,6 +46,28 @@ void collide_ball_with_plane(mkb::PhysicsBall* physicsball, mkb::ColiPlane* plan
     }
 }
 
+// Bumper collision
+void bumper_coli(mkb::Stobj* stobj, mkb::PhysicsBall * physicsball) {
+    Vec prev_pos = physicsball->pos;
+    Vec prev_vel = physicsball->vel;
+    s_stobj_bumper_coli_tramp.dest(stobj, physicsball);
+    if (!VEC_EQUAL_EXACT(prev_pos, physicsball->pos) ||
+        !VEC_EQUAL_EXACT(prev_vel, physicsball->vel)) {
+        physicsball->flags |= COLI_FLAG_IG;
+    }
+}
+
+// Party Ball collision
+void goalbag_coli(mkb::Stobj* stobj, mkb::PhysicsBall * physicsball) {
+    Vec prev_pos = physicsball->pos;
+    Vec prev_vel = physicsball->vel;
+    s_stobj_goalbag_coli_tramp.dest(stobj, physicsball);
+    if (!VEC_EQUAL_EXACT(prev_pos, physicsball->pos) ||
+        !VEC_EQUAL_EXACT(prev_vel, physicsball->vel)) {
+        physicsball->flags |= COLI_FLAG_IG;
+    }
+}
+
 }// namespace
 
 namespace fix_spooky_action {
@@ -59,6 +85,10 @@ void init_main_loop() {
                          tf_physicsball_to_itemgroup_space);
     patch::hook_function(s_collide_physicsball_tramp, mkb::collide_ball_with_plane,
                          collide_ball_with_plane);
+    patch::hook_function(s_stobj_bumper_coli_tramp, mkb::stobj_bumper_coli,
+                         bumper_coli);
+    patch::hook_function(s_stobj_goalbag_coli_tramp, mkb::stobj_goalbag_coli,
+                         goalbag_coli);
 }
 
 }// namespace fix_spooky_action
