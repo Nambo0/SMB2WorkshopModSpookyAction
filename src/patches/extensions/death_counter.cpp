@@ -21,7 +21,7 @@ static u32 death_count[4];
 u32 update_death_count() {
     mkb::Ball* ball = mkb::balls;
     for (int idx = 0; idx < 4; idx++) {
-        if (ball->status == mkb::STAT_NORMAL) {
+        if (ball->status == mkb::STAT_NORMAL && mkb::cm_player_progress[mkb::curr_player_idx].curr_stage.stage_course_num != 1) {
             death_count[idx]++;
         }
         ball++;
