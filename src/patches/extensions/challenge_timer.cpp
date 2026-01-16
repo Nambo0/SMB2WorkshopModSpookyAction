@@ -186,6 +186,10 @@ void on_goal() {
         mkb::call_SoundReqID_arg_0(0x11d);// SMB1 best score sound
         display_timer = 300;
         mkb::cm_player_progress[mkb::curr_player_idx].curr_stage.stage_course_num = 1;
+        
+        // Jam postgoal progression timer, so they get stuck on the postgoal anim
+        // This is done because there's a really crappy console-only crash on difficulty end cutscene
+        patch::write_nop(reinterpret_cast<void*>(0x808f572c));
     }
 }
 
