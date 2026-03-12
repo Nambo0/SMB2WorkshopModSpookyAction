@@ -232,6 +232,14 @@
 // Changes the stage ID used on the main menu. Setting this to -1 will lead to
 // default behavior (where the menu stage ID also uses more than one stage ID)
 
+// custom-font-color
+// font-primary
+// font-secondary
+//
+// Changes the colors of most yellow/orange text in the menus to the designated
+// primary & secondary color hex codes
+// hex codes have a period (.) in front, such as: .ff0000 (for red)
+
 // ----------------------------------------------------------------------------
 
 // 'enabled' - Applies the patch
@@ -281,6 +289,9 @@
 	story-fix-missing-w: disabled
 	pause-cooldown: disabled
 	perfect-bonus-completion: disabled
+	custom-font-color: enabled
+	font-primary: .ffff00
+	font-secondary: .ff8000
 }
 
 // Toggles which menu options are accessible.
