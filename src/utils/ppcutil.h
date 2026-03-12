@@ -13,6 +13,7 @@
 
 #define PPC_INSTR_LI(dest_register, value) (0x38000000 + (((u32) (dest_register)) << 21) + ((u16) value))
 #define PPC_INSTR_LIS(dest_register, value) (0x3C000000 + (((u32) (dest_register)) << 21) + ((u16) value))
+#define PPC_INSTR_ORI(dest_register, value) ((0b011000 << 26) + (((u32) (dest_register)) << 21) + (((u32) (dest_register)) << 16) + ((u16) value))
 
 #define PPC_INSTR_NOP() (0x60000000)
 
